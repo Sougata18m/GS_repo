@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Expense Tracker Dashboard</title>
+    <style>
+        /* ==========================================================================
+           CORE LAYOUT STYLES
+           ========================================================================== */
+        :root {
+            --primary: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --background: #f3f4f6;
+            --surface: #ffffff;
+            --text: #1f2937;
+            --text-muted: #6b7280;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .panel {
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .panel h2 {
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            border-bottom: 2px solid var(--background);
+            padding-bottom: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ==========================================================================
+           MEMBER 1: DASHBOARD & SUMMARY CARDS CSS
+           ========================================================================== */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        .card h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .card .amount {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+
+        .card.balance .amount {
+            color: var(--primary);
+        }
+
+        .card.income .amount {
+            color: var(--success);
+        }
+
+        .card.expense .amount {
+            color: var(--danger);
+        }
+
+        /* ==========================================================================
+           MEMBER 2: INCOME MODULE GENERAL COMPONENT CSS
+           ========================================================================== */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .btn-income {
+            background-color: var(--success);
+        }
+
+        /* ==========================================================================
+           MEMBER 3: EXPENSE MODULE, CATEGORIES & FILTERS CSS
+           ========================================================================== */
+        .btn-expense {
+            background-color: var(--danger);
+        }
+
+        .filters-container {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .transaction-list {
+            list-style: none;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.95rem;
+        }
+
+        .transaction-item.income-type {
+            border-left: 4px solid var(--success);
+        }
+
+        .transaction-item.expense-type {
+            border-left: 4px solid var(--danger);
+        }
+
+        .transaction-details span {
+            display: block;
+        }
+
+        .transaction-details .tx-cat {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            width: auto;
+            padding: 0 0.5rem;
+        }
+
+        /* ==========================================================================
+           MEMBER 4: REPORTS & VISUAL CHARTS CSS
+           ========================================================================== */
+        .report-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .chart-container {
+            margin-top: 1rem;
+        }
+
+        .bar-row {
+            margin-bottom: 0.5rem;
+        }
+
+        .bar-label {
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.25rem;
+        }
+
+        .bar-outer {
+            background: #e5e7eb;
+            border-radius: 4px;
+            height: 12px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .bar-inner {
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease-out;
+        }
+
+        .bar-inner.inc-bar {
+            background-color: var(--success);
+        }
+
+        .bar-inner.exp-bar {
+            background-color: var(--danger);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Personal Finance Tracker</h1>
+            <p style="color: var(--text-muted)">Collaborative Team Project</p>
+        </header>
+
+        <section class="dashboard-grid">
+            <div class="card balance">
+                <h3>Remaining Balance</h3>
+                <div class="amount" id="total-balance">$0.00</div>
+            </div>
+            <div class="card income">
+                <h3>Total Income</h3>
+                <div class="amount" id="total-income">$0.00</div>
+            </div>
+            <div class="card expense">
+                <h3>Total Expenses</h3>
+                <div class="amount" id="total-expenses">$0.00</div>
+            </div>
+        </section>
+
+        <div class="main-layout">
+            <div>
+                <div class="panel">
+                    <h2>Add Income</h2>
+                    <form id="income-form">
+                        <div class="form-group">
+                            <label for="inc-amount">Amount ($)</label>
+                            <input type="number" id="inc-amount" step="0.01" required min="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="inc-category">Category</label>
+                            <select id="inc-category">
+                                <option value="Salary">Salary</option>
+                                <option value="Freelance">Freelance</option>
+                                <option value="Investments">Investments</option>
+                                <option value="Other Income">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="inc-date">Date</label>
+                            <input type="date" id="inc-date" required>
+                        </div>
+                        <button type="submit" class="btn-income">Log Income</button>
+                    </form>
+                </div>
+
+                <div class="panel">
+                    <h2>Add Expense</h2>
+                    <form id="expense-form">
+                        <div class="form-group">
+                            <label for="exp-amount">Amount ($)</label>
+                            <input type="number" id="exp-amount" step="0.01" required min="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="exp-category">Category</label>
+                            <select id="exp-category">
+                                <option value="Food & Dining">Food & Dining</option>
+                                <option value="Rent & Utilities">Rent & Utilities</option>
+                                <option value="Entertainment">Entertainment</option>
+                                <option value="Transportation">Transportation</option>
+                                <option value="Shopping">Shopping</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="exp-date">Date</label>
+                            <input type="date" id="exp-date" required>
+                        </div>
+                        <button type="submit" class="btn-expense">Log Expense</button>
+                    </form>
+                </div>
+            </div>
+
+            <div>
+                <div class="panel">
+                    <h2>Recent Transactions</h2>
+                    <div class="filters-container">
+                        <select id="filter-type">
+                            <option value="all">All Types</option>
+                            <option value="income">Income</option>
+                            <option value="expense">Expense</option>
+                        </select>
+                        <select id="filter-category">
+                            <option value="all">All Categories</option>
+                        </select>
+                    </div>
+                    <ul class="transaction-list" id="transaction-list">
+                    </ul>
+                </div>
+
+                <div class="panel">
+                    <div class="report-flex">
+                        <h2>Monthly Breakdown</h2>
+                        <select id="report-month-filter" style="width: auto; padding: 0.4rem;">
+                        </select>
+                    </div>
+                    <div class="chart-container" id="chart-section">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // MEMBER 4: LOCAL STORAGE & MAIN STATE CONTROLLER
+        // ==========================================
+        let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+        function saveToLocalStorage() {
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+            updateApp();
+        }
+
+        // Auto-assign interactive date pickers to today's date
+        document.getElementById('inc-date').valueAsDate = new Date();
+        document.getElementById('exp-date').valueAsDate = new Date();
+
+
+        // ==========================================
+        // MEMBER 1: DASHBOARD CARD STATS ENGINE
+        // ==========================================
+        function updateDashboard(filteredTransactions) {
+            let totalIncome = 0;
+            let totalExpense = 0;
+
+            filteredTransactions.forEach(tx => {
+                if (tx.type === 'income') totalIncome += tx.amount;
+                if (tx.type === 'expense') totalExpense += tx.amount;
+            });
+
+            const remainingBalance = totalIncome - totalExpense;
+
+            document.getElementById('total-income').innerText = `$${totalIncome.toFixed(2)}`;
+            document.getElementById('total-expenses').innerText = `$${totalExpense.toFixed(2)}`;
+
+            const balanceEl = document.getElementById('total-balance');
+            balanceEl.innerText = `$${remainingBalance.toFixed(2)}`;
+            balanceEl.style.color = remainingBalance < 0 ? 'var(--danger)' : 'var(--primary)';
+        }
+
+
+        // ==========================================
+        // MEMBER 2: INCOME PIPELINE ROUTER
+        // ==========================================
+        document.getElementById('income-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const amount = parseFloat(document.getElementById('inc-amount').value);
+            const category = document.getElementById('inc-category').value;
+            const date = document.getElementById('inc-date').value;
+
+            const incomeTx = {
+                id: Date.now(),
+                type: 'income',
+                amount,
+                category,
+                date
+            };
+
+            transactions.push(incomeTx);
+            saveToLocalStorage();
+            this.reset();
+            document.getElementById('inc-date').valueAsDate = new Date();
+        });
+
+
+        // ==========================================
+        // MEMBER 3: EXPENSE PIPELINE & LIST FILTER MANAGERS
+        // ==========================================
+        document.getElementById('expense-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const amount = parseFloat(document.getElementById('exp-amount').value);
+            const category = document.getElementById('exp-category').value;
+            const date = document.getElementById('exp-date').value;
+
+            const expenseTx = {
+                id: Date.now(),
+                type: 'expense',
+                amount,
+                category,
+                date
+            };
+
+            transactions.push(expenseTx);
+            saveToLocalStorage();
+            this.reset();
+            document.getElementById('exp-date').valueAsDate = new Date();
+        });
+
+        function deleteTransaction(id) {
+            transactions = transactions.filter(tx => tx.id !== id);
+            saveToLocalStorage();
+        }
+
+        const typeFilter = document.getElementById('filter-type');
+        const catFilter = document.getElementById('filter-category');
+
+        typeFilter.addEventListener('change', updateCategoryOptions);
+        typeFilter.addEventListener('change', updateApp);
+        catFilter.addEventListener('change', updateApp);
+
+        function updateCategoryOptions() {
+            const type = typeFilter.value;
+            catFilter.innerHTML = '<option value="all">All Categories</option>';
+
+            let categories = [];
+            if (type === 'all' || type === 'income') {
+                categories.push('Salary', 'Freelance', 'Investments', 'Other Income');
+            }
+            if (type === 'all' || type === 'expense') {
+                categories.push('Food & Dining', 'Rent & Utilities', 'Entertainment', 'Transportation', 'Shopping');
+            }
+
+            [...new Set(categories)].forEach(cat => {
+                catFilter.innerHTML += `<option value="${cat}">${cat}</option>`;
+            });
+        }
+
+        function renderHistory(filteredTransactions) {
+            const list = document.getElementById('transaction-list');
+            list.innerHTML = '';
+
+            if (filteredTransactions.length === 0) {
+                list.innerHTML = '<li class="transaction-item" style="color:var(--text-muted)">No transactions found.</li>';
+                return;
+            }
+
+            const sorted = [...filteredTransactions].sort((a, b) => b.id - a.id);
+
+            sorted.forEach(tx => {
+                const li = document.createElement('li');
+                li.className = `transaction-item ${tx.type}-type`;
+
+                const prefix = tx.type === 'income' ? '+' : '-';
+                const dateObj = new Date(tx.date);
+                const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+
+                li.innerHTML = `
+                    <div class="transaction-details">
+                        <strong>${tx.category}</strong>
+                        <span class="tx-cat">${formattedDate}</span>
+                    </div>
+                    <div>
+                        <span style="font-weight:600; color: var(--${tx.type === 'income' ? 'success' : 'danger'})">
+                            ${prefix}$${tx.amount.toFixed(2)}
+                        </span>
+                        <button class="delete-btn" onclick="deleteTransaction(${tx.id})">&times;</button>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+
+        // ==========================================
+        // MEMBER 4: MONTHLY DATA AGGREGATION & DATA-BAR RENDERING
+        // ==========================================
+        const monthFilter = document.getElementById('report-month-filter');
+        monthFilter.addEventListener('change', updateApp);
+
+        function populateMonthFilter() {
+            const currentSelection = monthFilter.value;
+            monthFilter.innerHTML = '<option value="all">All Time</option>';
+
+            const monthsSeen = new Set();
+            transactions.forEach(tx => {
+                const m = tx.date.substring(0, 7); // Splices YYYY-MM formatted properties
+                monthsSeen.add(m);
+            });
+
+            Array.from(monthsSeen).sort().reverse().forEach(m => {
+                const [year, month] = m.split('-');
+                const date = new Date(year, month - 1);
+                const label = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                monthFilter.innerHTML += `<option value="${m}">${label}</option>`;
+            });
+
+            if (currentSelection) monthFilter.value = currentSelection;
+        }
+
+        function renderReports(filteredTransactions) {
+            const chartSection = document.getElementById('chart-section');
+            chartSection.innerHTML = '';
+
+            const catTotals = {};
+            let maxVal = 0;
+
+            filteredTransactions.forEach(tx => {
+                catTotals[tx.category] = (catTotals[tx.category] || 0) + tx.amount;
+                if (catTotals[tx.category] > maxVal) maxVal = catTotals[tx.category];
+            });
+
+            if (Object.keys(catTotals).length === 0) {
+                chartSection.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">No data available for charts.</p>';
+                return;
+            }
+
+            for (const [cat, total] of Object.entries(catTotals)) {
+                const isIncome = ['Salary', 'Freelance', 'Investments', 'Other Income'].includes(cat);
+                const barClass = isIncome ? 'inc-bar' : 'exp-bar';
+                const percentage = maxVal > 0 ? (total / maxVal) * 100 : 0;
+
+                const row = document.createElement('div');
+                row.className = 'bar-row';
+                row.innerHTML = `
+                    <div class="bar-label">
+                        <span>${cat}</span>
+                        <strong>$${total.toFixed(2)}</strong>
+                    </div>
+                    <div class="bar-outer">
+                        <div class="bar-inner ${barClass}" style="width: ${percentage}%"></div>
+                    </div>
+                `;
+                chartSection.appendChild(row);
+            }
+        }
+
+
+        // ==========================================
+        // MAIN PIPELINE ORCHESTRATION ENGINE
+        // ==========================================
+        function updateApp() {
+            const selectedType = typeFilter.value;
+            const selectedCat = catFilter.value;
+            const selectedMonth = monthFilter.value;
+
+            let filtered = transactions.filter(tx => {
+                const matchesType = selectedType === 'all' || tx.type === selectedType;
+                const matchesCat = selectedCat === 'all' || tx.category === selectedCat;
+                const matchesMonth = selectedMonth === 'all' || tx.date.startsWith(selectedMonth);
+                return matchesType && matchesCat && matchesMonth;
+            });
+
+            populateMonthFilter();
+            updateDashboard(filtered);
+            renderHistory(filtered);
+            renderReports(filtered);
+        }
+
+        // Application Liftoff
+        updateCategoryOptions();
+        updateApp();
+    </script>
+</body>
+
+</html>
