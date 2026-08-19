@@ -367,12 +367,22 @@
 
     <script>
         // ==========================================
-        // MEMBER 4: LOCAL STORAGE & MAIN STATE CONTROLLER
+        // MONGODB BACKEND INTEGRATION & MAIN STATE CONTROLLER
         // ==========================================
-        let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+        const API_URL = '/api/transactions';
+        let transactions = [];
 
-        function saveToLocalStorage() {
-            localStorage.setItem('transactions', JSON.stringify(transactions));
+        async function fetchTransactions() {
+            try {
+                const res = await fetch(API_URL);
+                if (res.ok) {
+                    transactions = await res.json();
+                } else {
+                    console.error('Failed to fetch transactions from backend API');
+                }
+            } catch (err) {
+                console.error('Error connecting to backend API:', err);
+            }
             updateApp();
         }
 
@@ -407,22 +417,30 @@
         // ==========================================
         // MEMBER 2: INCOME PIPELINE ROUTER
         // ==========================================
-        document.getElementById('income-form').addEventListener('submit', function (e) {
+        document.getElementById('income-form').addEventListener('submit', async function (e) {
             e.preventDefault();
             const amount = parseFloat(document.getElementById('inc-amount').value);
             const category = document.getElementById('inc-category').value;
             const date = document.getElementById('inc-date').value;
 
             const incomeTx = {
-                id: Date.now(),
                 type: 'income',
                 amount,
                 category,
                 date
             };
 
-            transactions.push(incomeTx);
-            saveToLocalStorage();
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(incomeTx)
+                });
+                await fetchTransactions();
+            } catch (err) {
+                console.error('Error logging income:', err);
+            }
+
             this.reset();
             document.getElementById('inc-date').valueAsDate = new Date();
         });
@@ -431,29 +449,41 @@
         // ==========================================
         // MEMBER 3: EXPENSE PIPELINE & LIST FILTER MANAGERS
         // ==========================================
-        document.getElementById('expense-form').addEventListener('submit', function (e) {
+        document.getElementById('expense-form').addEventListener('submit', async function (e) {
             e.preventDefault();
             const amount = parseFloat(document.getElementById('exp-amount').value);
             const category = document.getElementById('exp-category').value;
             const date = document.getElementById('exp-date').value;
 
             const expenseTx = {
-                id: Date.now(),
                 type: 'expense',
                 amount,
                 category,
                 date
             };
 
-            transactions.push(expenseTx);
-            saveToLocalStorage();
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(expenseTx)
+                });
+                await fetchTransactions();
+            } catch (err) {
+                console.error('Error logging expense:', err);
+            }
+
             this.reset();
             document.getElementById('exp-date').valueAsDate = new Date();
         });
 
-        function deleteTransaction(id) {
-            transactions = transactions.filter(tx => tx.id !== id);
-            saveToLocalStorage();
+        async function deleteTransaction(id) {
+            try {
+                await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                await fetchTransactions();
+            } catch (err) {
+                console.error('Error deleting transaction:', err);
+            }
         }
 
         const typeFilter = document.getElementById('filter-type');
@@ -489,7 +519,7 @@
                 return;
             }
 
-            const sorted = [...filteredTransactions].sort((a, b) => b.id - a.id);
+            const sorted = [...filteredTransactions];
 
             sorted.forEach(tx => {
                 const li = document.createElement('li');
@@ -508,7 +538,7 @@
                         <span style="font-weight:600; color: var(--${tx.type === 'income' ? 'success' : 'danger'})">
                             ${prefix}$${tx.amount.toFixed(2)}
                         </span>
-                        <button class="delete-btn" onclick="deleteTransaction(${tx.id})">&times;</button>
+                        <button class="delete-btn" onclick="deleteTransaction('${tx.id}')">&times;</button>
                     </div>
                 `;
                 list.appendChild(li);
@@ -528,8 +558,10 @@
 
             const monthsSeen = new Set();
             transactions.forEach(tx => {
-                const m = tx.date.substring(0, 7); // Splices YYYY-MM formatted properties
-                monthsSeen.add(m);
+                if (tx.date) {
+                    const m = tx.date.substring(0, 7); // Splices YYYY-MM formatted properties
+                    monthsSeen.add(m);
+                }
             });
 
             Array.from(monthsSeen).sort().reverse().forEach(m => {
@@ -603,7 +635,7 @@
 
         // Application Liftoff
         updateCategoryOptions();
-        updateApp();
+        fetchTransactions();
     </script>
 </body>
 
