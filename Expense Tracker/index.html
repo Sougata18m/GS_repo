@@ -5,9 +5,6 @@
     <meta charset="UTF-8">
     <title>Expense Tracker Dashboard</title>
     <style>
-        /* ==========================================================================
-           CORE LAYOUT STYLES
-           ========================================================================== */
         :root {
             --primary: #4f46e5;
             --success: #10b981;
@@ -68,9 +65,6 @@
             }
         }
 
-        /* ==========================================================================
-           MEMBER 1: DASHBOARD & SUMMARY CARDS CSS
-           ========================================================================== */
         .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -114,9 +108,6 @@
             color: var(--danger);
         }
 
-        /* ==========================================================================
-           MEMBER 2: INCOME MODULE GENERAL COMPONENT CSS
-           ========================================================================== */
         .form-group {
             margin-bottom: 1rem;
         }
@@ -157,9 +148,6 @@
             background-color: var(--success);
         }
 
-        /* ==========================================================================
-           MEMBER 3: EXPENSE MODULE, CATEGORIES & FILTERS CSS
-           ========================================================================== */
         .btn-expense {
             background-color: var(--danger);
         }
@@ -211,9 +199,6 @@
             padding: 0 0.5rem;
         }
 
-        /* ==========================================================================
-           MEMBER 4: REPORTS & VISUAL CHARTS CSS
-           ========================================================================== */
         .report-flex {
             display: flex;
             justify-content: space-between;
@@ -366,10 +351,9 @@
     </div>
 
     <script>
-        // ==========================================
-        // MONGODB BACKEND INTEGRATION & MAIN STATE CONTROLLER
-        // ==========================================
-        const API_URL = '/api/transactions';
+        const API_URL = window.location.protocol.startsWith('http')
+            ? '/api/transactions'
+            : 'http://localhost:5000/api/transactions';
         let transactions = [];
 
         async function fetchTransactions() {
@@ -386,14 +370,10 @@
             updateApp();
         }
 
-        // Auto-assign interactive date pickers to today's date
         document.getElementById('inc-date').valueAsDate = new Date();
         document.getElementById('exp-date').valueAsDate = new Date();
 
 
-        // ==========================================
-        // MEMBER 1: DASHBOARD CARD STATS ENGINE
-        // ==========================================
         function updateDashboard(filteredTransactions) {
             let totalIncome = 0;
             let totalExpense = 0;
@@ -414,9 +394,6 @@
         }
 
 
-        // ==========================================
-        // MEMBER 2: INCOME PIPELINE ROUTER
-        // ==========================================
         document.getElementById('income-form').addEventListener('submit', async function (e) {
             e.preventDefault();
             const amount = parseFloat(document.getElementById('inc-amount').value);
@@ -446,9 +423,6 @@
         });
 
 
-        // ==========================================
-        // MEMBER 3: EXPENSE PIPELINE & LIST FILTER MANAGERS
-        // ==========================================
         document.getElementById('expense-form').addEventListener('submit', async function (e) {
             e.preventDefault();
             const amount = parseFloat(document.getElementById('exp-amount').value);
@@ -546,9 +520,6 @@
         }
 
 
-        // ==========================================
-        // MEMBER 4: MONTHLY DATA AGGREGATION & DATA-BAR RENDERING
-        // ==========================================
         const monthFilter = document.getElementById('report-month-filter');
         monthFilter.addEventListener('change', updateApp);
 
@@ -559,7 +530,7 @@
             const monthsSeen = new Set();
             transactions.forEach(tx => {
                 if (tx.date) {
-                    const m = tx.date.substring(0, 7); // Splices YYYY-MM formatted properties
+                    const m = tx.date.substring(0, 7);
                     monthsSeen.add(m);
                 }
             });
@@ -611,10 +582,6 @@
             }
         }
 
-
-        // ==========================================
-        // MAIN PIPELINE ORCHESTRATION ENGINE
-        // ==========================================
         function updateApp() {
             const selectedType = typeFilter.value;
             const selectedCat = catFilter.value;
@@ -632,8 +599,6 @@
             renderHistory(filtered);
             renderReports(filtered);
         }
-
-        // Application Liftoff
         updateCategoryOptions();
         fetchTransactions();
     </script>
